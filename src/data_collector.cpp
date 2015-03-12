@@ -60,6 +60,7 @@ class DataCollector {
   std::vector<CalibPair> initial_calib_marker_;
   std::map<std::string, std::vector<Msr> > measurements_;
   std::map<std::string, std::vector<double> > measurements_sigma_;
+  std::map<std::string, sensor_msgs::CameraInfo> camera_info_;
 
   ros::Duration cam_offset_;
 
@@ -206,6 +207,9 @@ class DataCollector {
         for (int i = 1; i < joint_state_buffer_.size(); i++) {
           if ((marker_buffer_[0].header.stamp + cam_offset_) < joint_state_buffer_[i].header.stamp) {
             bool vel = true;
+            
+            camera_info_[marker_buffer_[0].header.frame_id] = marker_buffer_[0].camera_info;
+            
             std::string msr_id = marker_buffer_[0].header.frame_id + "_" +
                                  marker_buffer_[0].marker_id;
 
@@ -377,6 +381,43 @@ class DataCollector {
         Mat_VarFree(matvar);
       }
     }
+    
+    typedef std::map<std::string, sensor_msgs::CameraInfo>::iterator ci_it_type;
+    for (ci_it_type iterator = camera_info_.begin(); iterator != camera_info_.end(); iterator++) {
+      
+      sensor_msgs::CameraInfo ci = iterator->second;
+      
+      dims[0] = 3;
+      dims[1] = 3;
+
+      matvar = Mat_VarCreate((iterator->first + "_K").c_str(),
+                             MAT_C_DOUBLE,
+                             MAT_T_DOUBLE,
+                             2,
+                             &dims[0],
+                             &ci.K[0],
+                             0);
+      if (matvar) {
+        Mat_VarWrite(matfp, matvar, MAT_COMPRESSION_NONE);
+        Mat_VarFree(matvar);
+      }
+      
+      dims[0] = 1;
+      dims[1] = 4;
+
+      matvar = Mat_VarCreate((iterator->first + "_D").c_str(),
+                             MAT_C_DOUBLE,
+                             MAT_T_DOUBLE,
+                             2,
+                             &dims[0],
+                             &ci.D[0],
+                             0);
+      if (matvar) {
+        Mat_VarWrite(matfp, matvar, MAT_COMPRESSION_NONE);
+        Mat_VarFree(matvar);
+      }
+    }
+    
     Mat_Close(matfp);
   }
 };

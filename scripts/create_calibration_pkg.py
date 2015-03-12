@@ -190,15 +190,21 @@ def genmatload():
   ret = ret + 'load(\'/tmp/calibration.mat\');\n'
   return ret
 
-def matmain(calib_links, chains_spec, marker_links, joint_off):
+def matmain(calib_links, chains_spec, marker_links, camera_links, joint_off):
   ret = '''load_data
 intrinsic_t = mtk.make_compound('focal_length', @mtk.Rn, 2, ...
                                 'offset', @mtk.Rn, 2, ...
-                                'distortion', @mtk.Rn, 1);
+                                'distortion', @mtk.Rn, 4);
 
 o = mtk.OptimizationProblem();\n'''
   
   ret = ret + 'joint_offset_id = o.add_random_var(mtk.Rn(zeros({0}, 1)));\n'.format(len(set(joint_off)))
+  
+  for cam in camera_links:
+    ret = ret + '{0}_intrinsic = intrinsic_t();\n'.format(cam)
+    ret = ret + '{0}_intrinsic.focal_length.vec = [{0}_K(1, 1); {0}_K(2, 2)];\n'.format(cam)
+    ret = ret + '{0}_intrinsic.offset.vec = [{0}_K(3, 1); {0}_K(3, 2)];\n'.format(cam)
+    ret = ret + '{0}_intrinsic.distortion.vec = {0}_D\';\n'.format(cam)
   
   for jnt in calib_links:
     ret = ret + '{0}_id = o.add_random_var(mtk.SE3({0}\'));\n'.format(jnt)
@@ -296,7 +302,7 @@ def main(args):
   
   mat_load_str = genmatload()
   
-  mat_main_str = matmain(calib_joints, chains_spec, marker_links, jnt_off)
+  mat_main_str = matmain(calib_joints, chains_spec, marker_links, camera_links, jnt_off)
   
   ros_config_str = rosconfig(marker_links, calib_joints, joints)
   
