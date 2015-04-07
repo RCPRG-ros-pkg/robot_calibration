@@ -118,7 +118,7 @@ class DataCollector {
   KDL::Frame getJoint(const KDL::Tree& tree, const std::string& name) {
     KDL::SegmentMap segments = tree.getSegments();
 
-    for (KDL::SegmentMap::iterator iter = segments.begin(); iter != segments.end(); iter++) {
+    for (KDL::SegmentMap::iterator iter = segments.begin(); iter != segments.end(); ++iter) {
       KDL::Segment seg = iter->second.segment;
 
       if ((seg.getJoint().getName() == name) || seg.getName() == name) {
@@ -329,7 +329,7 @@ class DataCollector {
     }
 
     typedef std::map<std::string, std::vector<Msr> >::iterator it_type;
-    for (it_type iterator = measurements_.begin(); iterator != measurements_.end(); iterator++) {
+    for (it_type iterator = measurements_.begin(); iterator != measurements_.end(); ++iterator) {
       std::vector<double> joint_arr;
       joint_arr.reserve(joints_ordering_.size() * iterator->second.size());
 
@@ -383,7 +383,7 @@ class DataCollector {
     }
 
     typedef std::map<std::string, sensor_msgs::CameraInfo>::iterator ci_it_type;
-    for (ci_it_type iterator = camera_info_.begin(); iterator != camera_info_.end(); iterator++) {
+    for (ci_it_type iterator = camera_info_.begin(); iterator != camera_info_.end(); ++iterator) {
       sensor_msgs::CameraInfo ci = iterator->second;
 
       dims[0] = 3;
