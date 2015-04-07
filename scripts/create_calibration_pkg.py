@@ -25,7 +25,6 @@
 #  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 #  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import inspect
 import rospy
 import os
 import sys
@@ -43,7 +42,7 @@ def joint2mat(joint, joint_index):
 def frame2mat(frame):
   return '[' + str(frame.M[0, 0]) + ', ' + str(frame.M[0, 1]) + ', ' + str(frame.M[0, 2]) + ', ' + str(frame.p[0]) + '; ' + str(frame.M[1, 0]) + ', ' + str(frame.M[1, 1]) + ', ' + str(frame.M[1, 2]) + ', ' + str(frame.p[1]) + '; ' + str(frame.M[2, 0]) + ', ' + str(frame.M[2, 1]) + ', ' + str(frame.M[2, 2]) + ', ' + str(frame.p[2]) + '; ' + '0, 0, 0, 1]'
 
-def chain2mat(chain, calib_links, calib_joints, chain_start):
+def chain2mat(chain, calib_links, calib_joints):
   frame_str = ''
   fun_args = []
   for i in range(chain.getNrOfSegments()):
@@ -101,12 +100,12 @@ def genmsrfun(tree, chain_start, chain_end, calib_joints, joints):
   common_link = findcommonframe(tree, base_frame, chain_start, chain_end)
 
   x2cam_chain = tree.getChain(common_link, chain_start)
-  [x2cam_str, args] = chain2mat(x2cam_chain, calib_joints, joints, chain_start)
+  [x2cam_str, args] = chain2mat(x2cam_chain, calib_joints, joints)
   fun_args = fun_args + args
   x2marker_chain = tree.getChain(common_link, chain_end)
   end_link = getparent(x2marker_chain, chain_end)
   x2arm_chain = tree.getChain(common_link, end_link)
-  [x2arm_str, args] = chain2mat(x2arm_chain, calib_joints, joints, chain_start)
+  [x2arm_str, args] = chain2mat(x2arm_chain, calib_joints, joints)
   fun_args = fun_args + args
 
   fun_name = chain_start + '2' + chain_end
@@ -138,13 +137,13 @@ def genjointoffset(joints, jnt_off):
   return ret
 
 def haveoffset(chain, calib_joints, marker_links, num, direction):
-  x = num + direction
-  if x < 0:
+  index = num + direction
+  if index < 0:
     return 1
-  if x >= chain.getNrOfSegments():
+  if index >= chain.getNrOfSegments():
     return 1
 
-  seg = chain.getSegment(x)
+  seg = chain.getSegment(index)
 
   if seg.getJoint().getType() != kdl.Joint.None:
     return 1
@@ -152,7 +151,7 @@ def haveoffset(chain, calib_joints, marker_links, num, direction):
     if (seg.getJoint().getName() in calib_joints) or (seg.getName() in marker_links):
       return 0
     else:
-      return haveoffset(chain, calib_joints, marker_links, x, direction)
+      return haveoffset(chain, calib_joints, marker_links, index, direction)
 
 def jointofflist(tree, begin, end, calib_joints, marker_links):
   chain = tree.getChain(begin, end)
