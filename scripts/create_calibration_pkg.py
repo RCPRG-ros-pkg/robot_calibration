@@ -97,13 +97,13 @@ def getparent(chain, frame):
 def genmsrfun(tree, chain_start, chain_end, calib_joints, joints):
   base_frame = 'world'
   fun_args = []
-  common_link = findcommonframe(tree, base_frame, chain_start, chain_end)
+  common_link = str(findcommonframe(tree, base_frame, chain_start, chain_end))
 
   x2cam_chain = tree.getChain(common_link, chain_start)
   [x2cam_str, args] = chain2mat(x2cam_chain, calib_joints, joints)
   fun_args = fun_args + args
   x2marker_chain = tree.getChain(common_link, chain_end)
-  end_link = getparent(x2marker_chain, chain_end)
+  end_link = str(getparent(x2marker_chain, chain_end))
   x2arm_chain = tree.getChain(common_link, end_link)
   [x2arm_str, args] = chain2mat(x2arm_chain, calib_joints, joints)
   fun_args = fun_args + args
